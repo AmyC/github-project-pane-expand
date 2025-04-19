@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Github Project Pane Expander",
   "version": "1.0.0",
-  "description": "Automatically expand the Github Project pane on PRs.",
+  "description": "Automatically expand the Github Project pane on PRs to also show the Workstream dropdown.",
 
   "content_scripts": [
     {

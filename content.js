@@ -9,7 +9,7 @@
   function activateWidget(widget) {
     widget.classList.add('collapsible-sidebar-widget-active');
     widget.setAttribute('open', '');
-    console.log('✅ Activated project widget:', widget);
+    // console.log('✅ Activated project widget:', widget);
   }
 
   /**
@@ -34,7 +34,7 @@
 
       container.innerHTML = html;
       container.setAttribute('data-state', 'loaded');
-      console.log(`✅ Loaded widget form from ${url}`);
+      // console.log(`✅ Loaded widget form from ${url}`);
 
       // Expand it
       activateWidget(widget);
@@ -49,7 +49,7 @@
    */
   function processProjectWidgets(form) {
     const widgets = form.querySelectorAll(WIDGET_SELECTOR);
-    console.log(`🔄 processProjectWidgets found ${widgets.length} unopened widget(s)`);
+    // console.log(`🔄 processProjectWidgets found ${widgets.length} unopened widget(s)`);
     widgets.forEach(widget => loadWidgetForm(widget));
   }
 

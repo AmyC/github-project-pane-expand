@@ -3,11 +3,9 @@
    * 1) Marks a widget as active/open.
    */
   function activateWidget(widget) {
-    if (!widget.classList.contains('collapsible-sidebar-widget-active')) {
-      widget.classList.add('collapsible-sidebar-widget-active');
-      widget.setAttribute('open', '');
-      console.log('✅ Activated project widget:', widget);
-    }
+    widget.classList.add('collapsible-sidebar-widget-active');
+    widget.setAttribute('open', '');
+    console.log('✅ Activated project widget:', widget);
   }
 
   /**
@@ -50,17 +48,18 @@
   }
 
   /**
-   * 3) Finds all project widgets under the "Select projects" form,
+   * 3) Finds only the unopened project widgets under the form,
    *    and kicks off fetch + activate for each.
    */
   function processProjectWidgets(form) {
-    const widgets = form.querySelectorAll('collapsible-sidebar-widget[url]');
-    console.log(`🔄 processProjectWidgets found ${widgets.length} widget(s)`);
+    const selector = 'collapsible-sidebar-widget[url]:not([open])';
+    const widgets = form.querySelectorAll(selector);
+    console.log(`🔄 processProjectWidgets found ${widgets.length} unopened widget(s)`);
     widgets.forEach(widget => loadWidgetForm(widget));
   }
 
   /**
-   * 4) Initialization: run once and set up an observer on the form only.
+   * 4) Initialization: run once after full load, then observe the form only.
    */
   function init() {
     const form = document.querySelector(
@@ -73,25 +72,19 @@
 
     // observe only the form for additions/removals
     const observer = new MutationObserver((_, obs) => {
-      // if there’s still an unloaded widget, re-process
-      if (
-        form.querySelector(
-          'collapsible-sidebar-widget[url] .collapsible-sidebar-widget-content:not([data-loaded])'
-        )
-      ) {
+      if (form.querySelector('collapsible-sidebar-widget[url]:not([open])')) {
         processProjectWidgets(form);
       } else {
         obs.disconnect();
       }
     });
-
     observer.observe(form, { childList: true, subtree: true });
   }
 
-  // run on load (and handle the case where DOM is already ready)
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
+  // Wait for full load of HTML, CSS, images, etc.
+  if (document.readyState === 'complete') {
     init();
+  } else {
+    window.addEventListener('load', init);
   }
 })();

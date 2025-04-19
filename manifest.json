@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "description": "Automatically expand the Github Project pane on PRs.",
 
-  /* If you know your exact root ahead of time… */
   "content_scripts": [
     {
       "matches": [

@@ -1,6 +1,10 @@
 (() => {
+  // Shared selectors
+  const FORM_SELECTOR = 'form.js-issue-sidebar-form[aria-label="Select projects"]';
+  const WIDGET_SELECTOR = 'collapsible-sidebar-widget[url]:not([open])';
+
   /**
-   * 1) Marks a widget as active/open.
+   * Marks a widget as active/open.
    */
   function activateWidget(widget) {
     widget.classList.add('collapsible-sidebar-widget-active');
@@ -9,75 +13,65 @@
   }
 
   /**
-   * 2) Loads the widget’s form HTML and injects it—only once.
+   * Loads the widget’s form HTML and injects it—only once, using async/await.
    */
-  function loadWidgetForm(widget) {
+  async function loadWidgetForm(widget) {
     const url = widget.getAttribute('url');
     const container = widget.querySelector('.collapsible-sidebar-widget-content');
+    if (!url || !container) return;
 
-    // Skip if no URL, no container, already loaded, or already loading
-    if (
-      !url ||
-      !container ||
-      container.hasAttribute('data-loaded') ||
-      container.hasAttribute('data-loading')
-    ) {
-      return;
+    // Skip if already loading or loaded
+    const state = container.getAttribute('data-state');
+    if (state === 'loading' || state === 'loaded') return;
+
+    // Mark as loading
+    container.setAttribute('data-state', 'loading');
+
+    try {
+      const res = await fetch(url, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const html = await res.text();
+
+      container.innerHTML = html;
+      container.setAttribute('data-state', 'loaded');
+      console.log(`✅ Loaded widget form from ${url}`);
+
+      // Expand it
+      activateWidget(widget);
+    } catch (err) {
+      container.removeAttribute('data-state');
+      console.error(`❌ Failed to load widget form from ${url}`, err);
     }
-
-    // Mark as loading so we don’t refetch
-    container.setAttribute('data-loading', '');
-
-    fetch(url, { credentials: 'same-origin' })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.text();
-      })
-      .then(html => {
-        container.innerHTML = html;
-        container.removeAttribute('data-loading');
-        container.setAttribute('data-loaded', '');
-        console.log(`✅ Loaded widget form from ${url}`);
-        // now expand it
-        activateWidget(widget);
-      })
-      .catch(err => {
-        container.removeAttribute('data-loading');
-        console.error(`❌ Failed to load widget form from ${url}`, err);
-      });
   }
 
   /**
-   * 3) Finds only the unopened project widgets under the form,
-   *    and kicks off fetch + activate for each.
+   * Finds all unopened project widgets under the form and processes them.
    */
   function processProjectWidgets(form) {
-    const selector = 'collapsible-sidebar-widget[url]:not([open])';
-    const widgets = form.querySelectorAll(selector);
+    const widgets = form.querySelectorAll(WIDGET_SELECTOR);
     console.log(`🔄 processProjectWidgets found ${widgets.length} unopened widget(s)`);
     widgets.forEach(widget => loadWidgetForm(widget));
   }
 
   /**
-   * 4) Initialization: run once after full load, then observe the form only.
+   * Initialization: run once after full load, then observe the form only.
    */
   function init() {
-    const form = document.querySelector(
-      'form.js-issue-sidebar-form[aria-label="Select projects"]'
-    );
+    const form = document.querySelector(FORM_SELECTOR);
     if (!form) return;
 
-    // initial pass
+    // Initial processing
     processProjectWidgets(form);
 
-    // observe only the form for additions/removals
+    // Observe only the form for new widgets
     const observer = new MutationObserver((_, obs) => {
-      if (form.querySelector('collapsible-sidebar-widget[url]:not([open])')) {
+      if (form.querySelector(WIDGET_SELECTOR)) {
         processProjectWidgets(form);
       } else {
         obs.disconnect();
       }
     });
+
     observer.observe(form, { childList: true, subtree: true });
   }
 
